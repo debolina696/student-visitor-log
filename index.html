@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Entry/Exit Portal</title>
+    <title>Delhi National School - Student Entry/Exit Portal</title>
     
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,242 +14,213 @@
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- SheetJS (xlsx) library for multi-sheet Excel generation -->
+    <!-- SheetJS (xlsx) library for true multi-sheet Excel file generation -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8 flex flex-col justify-center items-center">
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
 
-    <div class="w-full max-w-6xl mx-auto">
-        
-        <!-- ========================================== -->
-        <!-- 1. LOGIN INTERFACE (SHOWN FIRST)          -->
-        <!-- ========================================== -->
-        <div id="loginScreen" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-lg border border-slate-200">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-2xl shadow-md mb-3">
-                    <i class="fa-solid fa-school text-3xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-slate-900">School Portal Login</h2>
-                <p class="text-xs text-slate-500 mt-1">Please enter your school credentials to access the registration log.</p>
+    <!-- PASSWORD MODAL OVERLAY -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center border border-slate-100">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full mb-4">
+                <i class="fa-solid fa-school text-2xl"></i>
+            </div>
+            <h2 class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">Delhi National School</h2>
+            <h3 class="text-xl font-bold text-slate-900">Portal Access Required</h3>
+            <p class="text-slate-500 text-sm mt-1 mb-4">Please enter the passcode to access the visitor log.</p>
+            
+            <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5 text-xs mb-4 font-medium flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-key"></i> Passcode: <span class="font-bold underline">777</span>
             </div>
 
-            <form onsubmit="handleLogin(event)" class="space-y-4" novalidate>
-                <!-- School Name Field -->
-                <div>
-                    <label for="loginSchoolName" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">School Name *</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-building text-slate-400 absolute left-3.5 top-3.5 text-sm"></i>
-                        <input type="text" id="loginSchoolName" placeholder="e.g. Delhi National school" required 
-                               class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                    </div>
-                </div>
+            <form onsubmit="verifyPassword(event)" class="space-y-3">
+                <input type="password" id="passcodeInput" placeholder="Enter passcode..." required
+                       class="w-full px-4 py-3 rounded-xl border border-slate-200 text-center font-bold text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                
+                <p id="passwordError" class="text-xs text-rose-500 hidden font-semibold">Incorrect passcode. Try again!</p>
 
-                <!-- Password Field -->
-                <div>
-                    <label for="loginPassword" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Access Password *</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-lock text-slate-400 absolute left-3.5 top-3.5 text-sm"></i>
-                        <input type="password" id="loginPassword" placeholder="Enter Password" required 
-                               class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                    </div>
-                </div>
-
-                <!-- Alert Box for Invalid Credentials -->
-                <div id="loginAlert" class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl hidden flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span id="loginAlertMessage">Invalid School Name or Password!</span>
-                </div>
-
-                <!-- Login Button -->
-                <button type="submit" 
-                        class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    Login to Portal
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition">
+                    Unlock Portal
                 </button>
             </form>
         </div>
+    </div>
 
-        <!-- ========================================== -->
-        <!-- 2. MAIN APPLICATION INTERFACE (HIDDEN AT FIRST) -->
-        <!-- ========================================== -->
-        <div id="mainPortal" class="hidden">
+    <!-- MAIN PORTAL CONTENT -->
+    <div id="mainApp" class="max-w-6xl mx-auto filter blur-sm pointer-events-none transition-all duration-300">
+        
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-2xl shadow-lg mb-3">
+                <i class="fa-solid fa-school text-3xl"></i>
+            </div>
+            <div class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">Delhi National School</div>
+            <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Student Entry / Exit Visitor Log</h1>
+            <p class="text-slate-500 mt-1 text-sm md:text-base">Log entry/exit timestamps, phone, stream, city, and export data directly to 12 monthly Excel sheets.</p>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- Header -->
-            <header class="mb-8 text-center relative">
-                <button onclick="handleLogout()" class="absolute right-0 top-0 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
-                </button>
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 text-white rounded-2xl shadow-lg mb-3">
-                    <i class="fa-solid fa-id-card text-3xl"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Delhi National School - Student Log</h1>
-                <p class="text-slate-500 mt-1 text-sm md:text-base">Log entry/exit timestamps, phone, stream, city, and export data directly to 12 monthly Excel sheets.</p>
-            </header>
-
-            <!-- Main Grid Layout -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Column: Input Form -->
+            <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-indigo-600"></i>
+                    New Log Entry
+                </h2>
                 
-                <!-- Left Column: Input Form -->
-                <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-user-plus text-indigo-600"></i>
-                        New Log Entry
-                    </h2>
+                <form id="studentForm" onsubmit="handleFormSubmit(event)" class="space-y-4" novalidate>
                     
-                    <form id="studentForm" onsubmit="handleFormSubmit(event)" class="space-y-4" novalidate>
-                        
-                        <!-- Entry vs Exit Radio Buttons -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status Type *</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
-                                    <input type="radio" name="entryType" value="Entry" checked class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
-                                    <span class="ml-2 text-sm font-medium text-emerald-700 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-right-to-bracket"></i> Entry
-                                    </span>
-                                </label>
-                                <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
-                                    <input type="radio" name="entryType" value="Exit" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
-                                    <span class="ml-2 text-sm font-medium text-rose-700 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-right-from-bracket"></i> Exit
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Log Date/Time -->
-                        <div>
-                            <label for="logTimestamp" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Date & Time *</label>
-                            <input type="datetime-local" id="logTimestamp" required 
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                        </div>
-
-                        <!-- Student ID (Strictly 5 Digits) -->
-                        <div>
-                            <label for="studentId" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Student ID (5 digits) *</label>
-                            <input type="text" id="studentId" placeholder="e.g. 12345" maxlength="5" required 
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span id="studentIdError" class="text-xs text-rose-500 mt-1 hidden">Student ID must be strictly 5 digits.</span>
-                        </div>
-
-                        <!-- Full Name (First & Surname Capitalized) -->
-                        <div>
-                            <label for="fullName" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Full Name (First & Surname with Capital letters) *</label>
-                            <input type="text" id="fullName" placeholder="e.g. Alex Johnson" required 
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span id="nameError" class="text-xs text-rose-500 mt-1 hidden">Must include First Name & Surname starting with Capital letters (e.g., John Smith).</span>
-                        </div>
-
-                        <!-- Class & Stream Grid -->
+                    <!-- Entry vs Exit Radio Buttons -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status Type *</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <!-- Class Dropdown -->
-                            <div>
-                                <label for="studentClass" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Class *</label>
-                                <select id="studentClass" required 
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white transition">
-                                    <option value="">-- Select Class --</option>
-                                    <option value="Class 9">Class 9</option>
-                                    <option value="Class 11">Class 11</option>
-                                </select>
-                            </div>
-
-                            <!-- Stream Dropdown -->
-                            <div>
-                                <label for="stream" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Stream *</label>
-                                <select id="stream" required 
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white transition">
-                                    <option value="">-- Select Stream --</option>
-                                    <option value="Science">Science</option>
-                                    <option value="Arts">Arts</option>
-                                    <option value="Commerce">Commerce</option>
-                                    <option value="N/A">N/A (General)</option>
-                                </select>
-                            </div>
+                            <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition">
+                                <input type="radio" name="entryType" value="Entry" checked class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="ml-2 text-sm font-medium text-emerald-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-right-to-bracket"></i> Entry
+                                </span>
+                            </label>
+                            <label class="flex items-center justify-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="entryType" value="Exit" class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                                <span class="ml-2 text-sm font-medium text-rose-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-right-from-bracket"></i> Exit
+                                </span>
+                            </label>
                         </div>
+                    </div>
 
-                        <!-- Phone Number -->
+                    <!-- Log Date/Time (Defaults to Now) -->
+                    <div>
+                        <label for="logTimestamp" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Date & Time *</label>
+                        <input type="datetime-local" id="logTimestamp" required 
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+
+                    <!-- Student ID (Strictly 5 Digits) -->
+                    <div>
+                        <label for="studentId" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Student ID (5 digits) *</label>
+                        <input type="text" id="studentId" placeholder="e.g. 12345" maxlength="5" required 
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                        <span id="studentIdError" class="text-xs text-rose-500 mt-1 hidden">Student ID must be strictly 5 digits.</span>
+                    </div>
+
+                    <!-- Full Name (First & Last Name Capitalized) -->
+                    <div>
+                        <label for="fullName" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Full Name (First & Surname with Capital letters) *</label>
+                        <input type="text" id="fullName" placeholder="e.g. Alex Johnson" required 
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                        <span id="nameError" class="text-xs text-rose-500 mt-1 hidden">Must include First Name & Surname starting with Capital letters (e.g., John Smith).</span>
+                    </div>
+
+                    <!-- Class & Stream Grid -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Class Dropdown (Class 9 & 11) -->
                         <div>
-                            <label for="phone" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Phone Number (10 digits) *</label>
-                            <input type="tel" id="phone" placeholder="e.g. 9876543210" maxlength="10" required 
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span id="phoneError" class="text-xs text-rose-500 mt-1 hidden">Phone number must be strictly 10 digits.</span>
+                            <label for="studentClass" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Class *</label>
+                            <select id="studentClass" required 
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white transition">
+                                <option value="">-- Select Class --</option>
+                                <option value="Class 9">Class 9</option>
+                                <option value="Class 11">Class 11</option>
+                            </select>
                         </div>
 
-                        <!-- City -->
+                        <!-- Stream Dropdown -->
                         <div>
-                            <label for="city" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">City *</label>
-                            <input type="text" id="city" placeholder="e.g. New York" required 
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            <label for="stream" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Stream *</label>
+                            <select id="stream" required 
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white transition">
+                                <option value="">-- Select Stream --</option>
+                                <option value="Science">Science</option>
+                                <option value="Arts">Arts</option>
+                                <option value="Commerce">Commerce</option>
+                                <option value="N/A">N/A (General)</option>
+                            </select>
                         </div>
+                    </div>
 
-                        <!-- Alert Box for Validation Errors -->
-                        <div id="errorAlert" class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl hidden flex items-center gap-2">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <span id="errorAlertMessage">Please fill in all required fields correctly.</span>
-                        </div>
+                    <!-- Phone Number (Strictly 10 Digits) -->
+                    <div>
+                        <label for="phone" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Phone Number (10 digits) *</label>
+                        <input type="tel" id="phone" placeholder="e.g. 9876543210" maxlength="10" required 
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                        <span id="phoneError" class="text-xs text-rose-500 mt-1 hidden">Phone number must be strictly 10 digits.</span>
+                    </div>
 
-                        <!-- Submit Button -->
-                        <button type="submit" 
-                                class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i>
-                            Add Record
-                        </button>
-                    </form>
+                    <!-- City -->
+                    <div>
+                        <label for="city" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">City *</label>
+                        <input type="text" id="city" placeholder="e.g. New Delhi" required 
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                    </div>
+
+                    <!-- Alert Box for Validation Errors -->
+                    <div id="errorAlert" class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl hidden flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span id="errorAlertMessage">Please fill in all required fields correctly.</span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Record
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Column: Live Data Table & Export Options -->
+            <div class="lg:col-span-7 space-y-4">
+                
+                <!-- Action Controls Bar -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-800">Live Activity Log</h2>
+                        <p class="text-xs text-slate-500" id="recordCount">0 entry/exit records</p>
+                    </div>
+
+                    <!-- Export Excel Button -->
+                    <button onclick="exportToMonthlyExcel()" 
+                            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i>
+                        Export Monthly Excel (12 Sheets)
+                    </button>
                 </div>
 
-                <!-- Right Column: Live Data Table & Export Options -->
-                <div class="lg:col-span-7 space-y-4">
-                    
-                    <!-- Action Controls Bar -->
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 class="text-base font-semibold text-slate-800">Live Activity Log</h2>
-                            <p class="text-xs text-slate-500" id="recordCount">0 entry/exit records</p>
-                        </div>
-
-                        <!-- Export Excel Button -->
-                        <button onclick="exportToMonthlyExcel()" 
-                                class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-2">
-                            <i class="fa-solid fa-file-excel"></i>
-                            Export Monthly Excel (12 Sheets)
-                        </button>
+                <!-- Table Container -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3 px-4">Type</th>
+                                    <th class="py-3 px-4">Student Details</th>
+                                    <th class="py-3 px-4">Class / Stream</th>
+                                    <th class="py-3 px-4">Contact / City</th>
+                                    <th class="py-3 px-4">Date & Time</th>
+                                    <th class="py-3 px-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody" class="divide-y divide-slate-100">
+                                <tr id="emptyRow">
+                                    <td colspan="6" class="py-12 text-center text-slate-400">
+                                        <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-300 block"></i>
+                                        No records logged yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Table Container -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-600">
-                                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-3 px-4">Type</th>
-                                        <th class="py-3 px-4">Student Details</th>
-                                        <th class="py-3 px-4">Class / Stream</th>
-                                        <th class="py-3 px-4">Contact / City</th>
-                                        <th class="py-3 px-4">Date & Time</th>
-                                        <th class="py-3 px-4 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="logTableBody" class="divide-y divide-slate-100">
-                                    <tr id="emptyRow">
-                                        <td colspan="6" class="py-12 text-center text-slate-400">
-                                            <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-300 block"></i>
-                                            No records logged yet.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                 </div>
 
             </div>
-        </div>
 
+        </div>
     </div>
 
     <!-- JavaScript Application Logic -->
@@ -260,39 +231,20 @@
             resetTimestampInput();
         });
 
-        // Login Function
-        function handleLogin(event) {
+        // Passcode Verification Function
+        function verifyPassword(event) {
             event.preventDefault();
-            const schoolName = document.getElementById('loginSchoolName').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const loginAlert = document.getElementById('loginAlert');
-            const loginAlertMessage = document.getElementById('loginAlertMessage');
+            const input = document.getElementById('passcodeInput').value.trim();
+            const passwordModal = document.getElementById('passwordModal');
+            const mainApp = document.getElementById('mainApp');
+            const passwordError = document.getElementById('passwordError');
 
-            loginAlert.classList.add('hidden');
-
-            if (schoolName.toLowerCase() !== "delhi national school") {
-                loginAlertMessage.innerText = "Access Denied: Incorrect School Name!";
-                loginAlert.classList.remove('hidden');
-                return;
+            if (input === '777') {
+                passwordModal.classList.add('hidden');
+                mainApp.classList.remove('blur-sm', 'pointer-events-none');
+            } else {
+                passwordError.classList.remove('hidden');
             }
-
-            if (password !== "777") {
-                loginAlertMessage.innerText = "Access Denied: Incorrect Password!";
-                loginAlert.classList.remove('hidden');
-                return;
-            }
-
-            // Hide login screen & show portal
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('mainPortal').classList.remove('hidden');
-        }
-
-        // Logout Function
-        function handleLogout() {
-            document.getElementById('mainPortal').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('loginSchoolName').value = '';
-            document.getElementById('loginPassword').value = '';
         }
 
         function resetTimestampInput() {
@@ -319,20 +271,17 @@
             const nameError = document.getElementById('nameError');
             const phoneError = document.getElementById('phoneError');
 
-            // Hide previous errors
             errorAlert.classList.add('hidden');
             studentIdError.classList.add('hidden');
             nameError.classList.add('hidden');
             phoneError.classList.add('hidden');
 
-            // 1. Form Field Check
             if (!studentId || !fullName || !studentClass || !stream || !phone || !city || !logTimestamp) {
                 errorAlertMessage.innerText = "All fields are required! Please fill out all fields.";
                 errorAlert.classList.remove('hidden');
                 return;
             }
 
-            // 2. Student ID Validation: Exactly 5 Digits
             const studentIdRegex = /^[0-9]{5}$/;
             if (!studentIdRegex.test(studentId)) {
                 studentIdError.classList.remove('hidden');
@@ -341,7 +290,6 @@
                 return;
             }
 
-            // 3. Name Validation: First Name & Surname, spaced, starting with Capital letter
             const nameRegex = /^[A-Z][a-zA-Z]*\s+[A-Z][a-zA-Z]*$/;
             if (!nameRegex.test(fullName)) {
                 nameError.classList.remove('hidden');
@@ -350,7 +298,6 @@
                 return;
             }
 
-            // 4. Phone Validation: Exactly 10 digits
             const phoneRegex = /^[0-9]{10}$/;
             if (!phoneRegex.test(phone)) {
                 phoneError.classList.remove('hidden');
@@ -377,13 +324,7 @@
             records.unshift(record);
             renderTable();
 
-            // Reset form fields
-            document.getElementById('studentId').value = '';
-            document.getElementById('fullName').value = '';
-            document.getElementById('studentClass').value = '';
-            document.getElementById('stream').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('city').value = '';
+            document.getElementById('studentForm').reset();
             resetTimestampInput();
         }
 
@@ -465,6 +406,7 @@
                 });
 
                 const sheetData = [
+                    ["School Name", "Delhi National School"],
                     ["Status Type", "Student ID", "Full Name", "Class", "Stream", "Phone Number", "City", "Date & Time"]
                 ];
 
@@ -485,7 +427,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, month);
             });
 
-            const fileName = `Student_Visitor_Log_${primaryYear}.xlsx`;
+            const fileName = `Delhi_National_School_Visitor_Log_${primaryYear}.xlsx`;
             XLSX.writeFile(wb, fileName);
         }
     </script>
